@@ -1,4 +1,12 @@
+using dnSpy.BamlDecompiler.Xaml;
+
 namespace dnSpy.BamlDecompiler {
+	internal class TargetTypeAnnotation {
+		public XamlType Type { get; }
+
+		public TargetTypeAnnotation(XamlType type) => Type = type;
+	}
+
 	internal class BamlConnectionId {
 		public uint Id { get; }
 
