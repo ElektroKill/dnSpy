@@ -53,12 +53,23 @@ namespace dnSpy.BamlDecompiler.Rewrite {
 			if (type is null)
 				return;
 
-			var wbAsm = ctx.Module.CorLibTypes.AssemblyRef.Version == new Version(2, 0, 0, 0) ?
-				new AssemblyNameInfo("WindowsBase, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35").ToAssemblyRef() :
-				new AssemblyNameInfo("WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35").ToAssemblyRef();
-			var ifaceRef = new TypeRefUser(ctx.Module, "System.Windows.Markup", "IComponentConnector", wbAsm);
-			var iface = ctx.Module.Context.Resolver.ResolveThrow(ifaceRef);
+			DecompileConnectionIds(ctx, document, ResolveType(ctx.Module, "System.Windows.Markup.IComponentConnector"), type);
+			DecompileConnectionIds(ctx, document, ResolveType(ctx.Module, "System.Windows.Markup.IStyleConnector"), type);
+		}
 
+		static TypeDef ResolveType(ModuleDef module, string toFind) {
+			foreach (var assemblyRef in module.GetAssemblyRefs()) {
+				var found = module.Context.AssemblyResolver.Resolve(assemblyRef, module).Find(toFind, true);
+				if (found != null)
+					return found;
+			}
+
+			return null;
+		}
+
+		void DecompileConnectionIds(XamlContext ctx, XDocument document, TypeDef iface, TypeDef type) {
+			if (iface is null)
+				return;
 			var connect = iface.FindMethod("Connect");
 
 			foreach (MethodDef method in type.Methods) {
@@ -68,6 +79,7 @@ namespace dnSpy.BamlDecompiler.Rewrite {
 					break;
 				}
 			}
+
 			if (iface is not null)
 				return;
 
@@ -75,8 +87,7 @@ namespace dnSpy.BamlDecompiler.Rewrite {
 			try {
 				connIds = ExtractConnectionId(ctx, connect);
 			}
-			catch {
-			}
+			catch { }
 
 			if (connIds is null) {
 				var msg = dnSpy_BamlDecompiler_Resources.Error_IComponentConnectorConnetCannotBeParsed;
